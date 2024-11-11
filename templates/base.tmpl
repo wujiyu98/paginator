@@ -1,0 +1,25 @@
+{{ if .p.HasBar}}
+<ul style="list-style: none;clear: both;">
+  {{if .p.HasPrevPage }}
+  <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;">
+    <a href="{{ .p.PrevLink }}">{{.p.PrevName}}</a>
+  </li>
+  {{else}}
+  <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;" aria-disabled="true">
+    <span >{{.p.PrevName}}</span>
+  </li>
+  {{end}}
+  <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;">
+    <a href="">{{.p.Page}}</a>
+  </li>
+  {{if .p.HasNextPage }}
+  <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;">
+    <a href="{{ .p.NextLink }}">{{.p.NextName}}</a>
+  </li>
+  {{else}}
+  <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;">
+    <span>{{.p.NextName}}</span>
+  </li>
+  {{end}}
+</ul>
+{{end}}

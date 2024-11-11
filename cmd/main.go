@@ -68,19 +68,14 @@ func paginate(totalPages, currentPage, slot int) []PageItem {
 }
 
 func testPaginate() {
-	p := paginator.New(100, 4)
-	pageList := p.Paginate()
+	p := paginator.Default(100, 5)
+	p.SetSize(20)
 
-	// 打印分页结果
-	for _, item := range pageList {
-		if item.IsEllipsis {
-			fmt.Print("... ")
-		} else {
-			fmt.Printf("%d ", item.PageNum)
-		}
-	}
-	// 输出示例：1 2 3 4 ... 10
-	p.Parse()
+	p.Path = "/product/phone"
+	p.AddQuery("keyword", "hello")
+
+	// fmt.Println(p.Parse("bs5.tmpl"))
+	fmt.Println(p.GetContent(3))
 
 }
 

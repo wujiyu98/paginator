@@ -2,31 +2,59 @@ package paginator
 
 import (
 	"bytes"
-	"fmt"
+	"encoding/json"
+	"html/template"
 	"math"
+	"net/http"
 	"net/url"
 	"strconv"
-	"text/template"
+
+	"github.com/wujiyu98/paginator/v2/templates"
 )
 
 type Pagination struct {
-	Total     int         `json:"total"`
-	Page      int         `json:"page"`
-	Size      int         `json:"size"`
-	Path      string      `json:"path"`
-	PageCount int         `json:"pageCount"`
-	Slot      int         `json:"slot"`
-	PrevName  string      `json:"-"`
-	NextName  string      `json:"-"`
-	Queries   url.Values  `json:"-"`
-	Data      interface{} `json:"data"`
+	Total        int         `json:"total"`
+	Page         int         `json:"page"`
+	Size         int         `json:"size"`
+	Path         string      `json:"path"`
+	PageCount    int         `json:"pageCount"`
+	Slot         int         `json:"slot"`
+	PrevName     string      `json:"-"`
+	NextName     string      `json:"-"`
+	PageList     []PageItem  `json:"-"`
+	BarSize      string      `json:"-"` //默认是中等大小，pagination-sm是小，pagination-lg是大
+	FirstPageUrl string      `json:"firstPageUrl"`
+	LastPageUrl  string      `json:"lastPageUrl"`
+	Queries      url.Values  `json:"-"`
+	Data         interface{} `json:"data"`
 }
 type PageItem struct {
 	IsEllipsis bool // 是否为省略号
 	PageNum    int  // 页码，仅在 IsEllipsis 为 false 时有效
 }
 
-func New(total int, page int) *Pagination {
+func New(r *http.Request, defalutSize ...int) *Pagination {
+	var page, total, size int
+	if len(defalutSize) > 0 {
+		size = defalutSize[0]
+	}
+	values := r.URL.Query()
+	if values.Has("page") {
+		page, _ = strconv.Atoi(values.Get("page"))
+	}
+	if values.Has("total") {
+		total, _ = strconv.Atoi(values.Get("total"))
+	}
+	p := Default(total, page)
+	if values.Has("size") {
+		size, _ = strconv.Atoi(values.Get("size"))
+	}
+	p.SetSize(size)
+	return p
+
+}
+
+func Default(total int, page int) *Pagination {
 	if total <= 0 {
 		total = 0
 	}
@@ -39,13 +67,19 @@ func New(total int, page int) *Pagination {
 		Size:     10,
 		Path:     "/",
 		Slot:     5,
-		PrevName: "&laquo;",
-		NextName: "&raquo;",
+		PrevName: "«",
+		NextName: "»",
 	}
 }
 
 // func (p *Pagination) method() {}
 
+func (p *Pagination) SetSize(size int) {
+	if size <= 0 {
+		size = 10
+	}
+	p.Size = size
+}
 func (p *Pagination) setPageCount() {
 	p.PageCount = int(math.Ceil(float64(p.Total) / float64(p.Size)))
 }
@@ -71,12 +105,14 @@ func (p *Pagination) NextLink() (link string) {
 
 	if p.HasNextPage() {
 		page := p.Page + 1
-		fmt.Println("-------", page)
 		return p.GetLink(page)
 	}
 	return
 }
 
+func (p *Pagination) HasBar() bool {
+	return p.PageCount > 0
+}
 func paginate(totalPages, currentPage, slot int) []PageItem {
 	var pageList []PageItem
 
@@ -132,10 +168,11 @@ func paginate(totalPages, currentPage, slot int) []PageItem {
 	return pageList
 }
 
-func (p *Pagination) Paginate() (pageList []PageItem) {
+func (p *Pagination) Paginate() {
 	p.setPageCount()
-	pageList = paginate(p.PageCount, p.Page, p.Slot)
-	return
+	p.LastPageUrl = p.GetLink(p.PageCount)
+	p.FirstPageUrl = p.GetLink(1)
+	p.PageList = paginate(p.PageCount, p.Page, p.Slot)
 }
 
 func (p *Pagination) AddQuery(key string, value string) {
@@ -149,10 +186,13 @@ func (p *Pagination) AddQuery(key string, value string) {
 	}
 }
 
+func (p *Pagination) AddQueries(values url.Values) {
+	p.Queries = values
+}
+
 func (p *Pagination) GetLink(page int) (link string) {
 	if page != 1 {
 		p.AddQuery("page", strconv.Itoa(page))
-		p.AddQuery("size", strconv.Itoa(p.Size))
 	}
 	link = p.Path
 	if len(p.Queries) > 0 {
@@ -162,14 +202,50 @@ func (p *Pagination) GetLink(page int) (link string) {
 	return
 }
 
-func (p *Pagination) Parse() {
-	p.Paginate()
+func (p *Pagination) Parse(tmpl string) string {
 	var buf bytes.Buffer
-	t := template.Must(template.ParseGlob("template/*.tmpl"))
-	err := t.ExecuteTemplate(&buf, "bs5.tmpl", map[string]interface{}{
+	p.Paginate()
+	t := template.Must(template.ParseFS(templates.Fs, "*.tmpl"))
+	t.ExecuteTemplate(&buf, tmpl, map[string]interface{}{
 		"p": p,
 	})
-	fmt.Println(err)
-	fmt.Println(buf.String())
 
+	return buf.String()
+
+}
+
+func (p *Pagination) ParseString(str string) string {
+	var buf bytes.Buffer
+	p.Paginate()
+	t := template.Must(template.New("").Parse(str))
+	t.Execute(&buf, map[string]interface{}{
+		"p": p,
+	})
+
+	return buf.String()
+
+}
+
+func (p *Pagination) GetContent(t int) template.HTML {
+	var tmpl string
+
+	switch t {
+	case 1:
+		tmpl = `{{ if .p.HasBar}} <ul style="list-style: none;clear: both;"> {{if .p.HasPrevPage }} <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;"> <a href="{{ .p.PrevLink }}">{{.p.PrevName}}</a> </li> {{else}} <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;" aria-disabled="true"> <span>{{.p.PrevName}}</span> </li> {{end}} <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;"> <a href="">{{.p.Page}}</a> </li> {{if .p.HasNextPage }} <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;"> <a href="{{ .p.NextLink }}">{{.p.NextName}}</a> </li> {{else}} <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;"> <span>{{.p.NextName}}</span> </li> {{end}} </ul> {{end}}`
+
+	case 2:
+		tmpl = `{{if .p.HasBar}} <nav aria-label="pagination"> <ul class="pagination"> {{if .p.HasPrevPage }} <li class="page-item"> <a href="{{ .p.PrevLink }}" class="page-link">{{.p.PrevName}}</a> </li> {{else}} <li class="page-item disabled"> <span class="page-link">{{.p.PrevName}}</span> </li> {{end}} <li class="page-item active" aria-current="page"> <span class="page-link">{{.p.Page}}</span> </li> {{if .p.HasNextPage }} <li class="page-item"> <a href="{{ .p.NextLink }}" class="page-link">{{.p.NextName}}</a> </li> {{else}} <li class="page-item disabled"> <span class="page-link">{{.p.NextName}}</span> </li> {{end}} </ul> </nav> {{end}}`
+
+	case 3:
+		tmpl = `{{ if .p.HasBar}} <nav aria-label="pagination"> <ul class="pagination {{.p.BarSize}}"> {{if .p.HasPrevPage }} <li class="page-item"> <a href="{{ .p.PrevLink }}" class="page-link">{{.p.PrevName}}</a> </li> {{else}} <li class="page-item disabled"> <span class="page-link">{{.p.PrevName}}</span> </li> {{end}} {{range $k,$v:= .p.PageList}} {{if $v.IsEllipsis}} <li class="page-item" aria-current="page"> <span class="page-link">...</span> </li> {{else}} {{if eq $.p.Page $v.PageNum}} <li class="page-item active" aria-current="page"><a class="page-link" href="{{$.p.GetLink $v.PageNum}}">{{$v.PageNum}}</a></li> {{else}} <li class="page-item"><a class="page-link" href="{{$.p.GetLink $v.PageNum}}">{{$v.PageNum}}</a></li> {{end}} {{end}} {{end}} {{if .p.HasNextPage }} <li class="page-item"> <a href="{{ .p.NextLink }}" class="page-link">{{.p.NextName}}</a> </li> {{else}} <li class="page-item disabled"> <span class="page-link">{{.p.NextName}}</span> </li> {{end}} </ul> </nav> {{end}}`
+
+	}
+	return template.HTML(p.ParseString(tmpl))
+
+}
+
+func (p *Pagination) GetJson() string {
+	p.Paginate()
+	b, _ := json.Marshal(p)
+	return string(b)
 }

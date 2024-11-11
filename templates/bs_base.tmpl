@@ -1,0 +1,27 @@
+{{if .p.HasBar}}
+<nav aria-label="pagination">
+  <ul class="pagination">
+    {{if .p.HasPrevPage }}
+    <li class="page-item">
+      <a href="{{ .p.PrevLink }}" class="page-link">{{.p.PrevName}}</a>
+    </li>
+    {{else}}
+    <li class="page-item disabled">
+      <span class="page-link">{{.p.PrevName}}</span>
+    </li>
+    {{end}}
+    <li class="page-item active" aria-current="page">
+      <span class="page-link">{{.p.Page}}</span>
+    </li>
+    {{if .p.HasNextPage }}
+    <li class="page-item">
+      <a href="{{ .p.NextLink }}" class="page-link">{{.p.NextName}}</a>
+    </li>
+    {{else}}
+    <li class="page-item disabled">
+      <span class="page-link">{{.p.NextName}}</span>
+    </li>
+    {{end}}
+  </ul>
+</nav>
+{{end}}
