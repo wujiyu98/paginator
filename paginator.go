@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-
-	"github.com/wujiyu98/paginator/v2/templates"
 )
 
 type Pagination struct {
@@ -203,17 +201,17 @@ func (p *Pagination) GetLink(page int) (link string) {
 	return
 }
 
-func (p *Pagination) Parse(tmpl string) string {
-	var buf bytes.Buffer
-	p.Paginate()
-	t := template.Must(template.ParseFS(templates.Fs, "*.tmpl"))
-	t.ExecuteTemplate(&buf, tmpl, map[string]interface{}{
-		"p": p,
-	})
+// func (p *Pagination) Parse(tmpl string) string {
+// 	var buf bytes.Buffer
+// 	p.Paginate()
+// 	t := template.Must(template.ParseFS(templates.Fs, "*.tmpl"))
+// 	t.ExecuteTemplate(&buf, tmpl, map[string]interface{}{
+// 		"p": p,
+// 	})
 
-	return buf.String()
+// 	return buf.String()
 
-}
+// }
 
 func (p *Pagination) ParseString(str string) string {
 	var buf bytes.Buffer
