@@ -26,6 +26,7 @@ type Pagination struct {
 	FirstPageUrl string      `json:"firstPageUrl"`
 	LastPageUrl  string      `json:"lastPageUrl"`
 	Queries      url.Values  `json:"-"`
+	CustomTmpl   string      `json:"-"`
 	Data         interface{} `json:"data"`
 }
 type PageItem struct {
@@ -33,17 +34,14 @@ type PageItem struct {
 	PageNum    int  // 页码，仅在 IsEllipsis 为 false 时有效
 }
 
-func New(r *http.Request, defalutSize ...int) *Pagination {
-	var page, total, size int
+func New(r *http.Request, total int, defalutSize ...int) *Pagination {
+	var page, size int
 	if len(defalutSize) > 0 {
 		size = defalutSize[0]
 	}
 	values := r.URL.Query()
 	if values.Has("page") {
 		page, _ = strconv.Atoi(values.Get("page"))
-	}
-	if values.Has("total") {
-		total, _ = strconv.Atoi(values.Get("total"))
 	}
 	p := Default(total, page)
 	if values.Has("size") {
@@ -191,14 +189,17 @@ func (p *Pagination) AddQueries(values url.Values) {
 }
 
 func (p *Pagination) GetLink(page int) (link string) {
-	if page != 1 {
+	link = p.Path
+	if page == 1 {
+		if p.Queries.Has("page") {
+			p.Queries.Del("page")
+		}
+	} else {
 		p.AddQuery("page", strconv.Itoa(page))
 	}
-	link = p.Path
 	if len(p.Queries) > 0 {
 		link = p.Path + "?" + p.Queries.Encode()
 	}
-
 	return
 }
 
@@ -226,6 +227,10 @@ func (p *Pagination) ParseString(str string) string {
 
 }
 
+// 1 是原生html
+// 2 是bootstarp 简单模式，只有上一页当前页和下一页
+// 3 是bootstrap 有分页列表模式
+// 4 自定义模式, 通过p.CustomTmpl设置
 func (p *Pagination) GetContent(t int) template.HTML {
 	var tmpl string
 
@@ -238,7 +243,8 @@ func (p *Pagination) GetContent(t int) template.HTML {
 
 	case 3:
 		tmpl = `{{ if .p.HasBar}} <nav aria-label="pagination"> <ul class="pagination {{.p.BarSize}}"> {{if .p.HasPrevPage }} <li class="page-item"> <a href="{{ .p.PrevLink }}" class="page-link">{{.p.PrevName}}</a> </li> {{else}} <li class="page-item disabled"> <span class="page-link">{{.p.PrevName}}</span> </li> {{end}} {{range $k,$v:= .p.PageList}} {{if $v.IsEllipsis}} <li class="page-item" aria-current="page"> <span class="page-link">...</span> </li> {{else}} {{if eq $.p.Page $v.PageNum}} <li class="page-item active" aria-current="page"><a class="page-link" href="{{$.p.GetLink $v.PageNum}}">{{$v.PageNum}}</a></li> {{else}} <li class="page-item"><a class="page-link" href="{{$.p.GetLink $v.PageNum}}">{{$v.PageNum}}</a></li> {{end}} {{end}} {{end}} {{if .p.HasNextPage }} <li class="page-item"> <a href="{{ .p.NextLink }}" class="page-link">{{.p.NextName}}</a> </li> {{else}} <li class="page-item disabled"> <span class="page-link">{{.p.NextName}}</span> </li> {{end}} </ul> </nav> {{end}}`
-
+	case 4:
+		tmpl = p.CustomTmpl
 	}
 	return template.HTML(p.ParseString(tmpl))
 
