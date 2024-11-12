@@ -45,6 +45,7 @@ func New(r *http.Request, total int, defalutSize ...int) *Pagination {
 	if values.Has("size") {
 		size, _ = strconv.Atoi(values.Get("size"))
 	}
+	p.Path = r.URL.Path
 	p.SetSize(size)
 	return p
 
