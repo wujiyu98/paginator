@@ -98,6 +98,10 @@ func (p *Pagination) HasNextPage() bool {
 	return p.Page != p.PageCount
 }
 
+func (p *Pagination) Offset() int {
+	return (p.Page - 1) * p.Size
+}
+
 func (p *Pagination) NextLink() (link string) {
 
 	if p.HasNextPage() {
@@ -234,16 +238,16 @@ func (p *Pagination) GetContent(t int) template.HTML {
 	var tmpl string
 
 	switch t {
+	case 0:
+		tmpl = p.CustomTmpl
 	case 1:
 		tmpl = `{{ if .p.HasBar}} <ul style="list-style: none;clear: both;"> {{if .p.HasPrevPage }} <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;"> <a href="{{ .p.PrevLink }}">{{.p.PrevName}}</a> </li> {{else}} <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;" aria-disabled="true"> <span>{{.p.PrevName}}</span> </li> {{end}} <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;"> <a href="">{{.p.Page}}</a> </li> {{if .p.HasNextPage }} <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;"> <a href="{{ .p.NextLink }}">{{.p.NextName}}</a> </li> {{else}} <li style="float: left;padding: 5px 10px; border: 1px solid gray; margin: 5px 5px;"> <span>{{.p.NextName}}</span> </li> {{end}} </ul> {{end}}`
-
 	case 2:
 		tmpl = `{{if .p.HasBar}} <nav aria-label="pagination"> <ul class="pagination"> {{if .p.HasPrevPage }} <li class="page-item"> <a href="{{ .p.PrevLink }}" class="page-link">{{.p.PrevName}}</a> </li> {{else}} <li class="page-item disabled"> <span class="page-link">{{.p.PrevName}}</span> </li> {{end}} <li class="page-item active" aria-current="page"> <span class="page-link">{{.p.Page}}</span> </li> {{if .p.HasNextPage }} <li class="page-item"> <a href="{{ .p.NextLink }}" class="page-link">{{.p.NextName}}</a> </li> {{else}} <li class="page-item disabled"> <span class="page-link">{{.p.NextName}}</span> </li> {{end}} </ul> </nav> {{end}}`
-
 	case 3:
 		tmpl = `{{ if .p.HasBar}} <nav aria-label="pagination"> <ul class="pagination {{.p.BarSize}}"> {{if .p.HasPrevPage }} <li class="page-item"> <a href="{{ .p.PrevLink }}" class="page-link">{{.p.PrevName}}</a> </li> {{else}} <li class="page-item disabled"> <span class="page-link">{{.p.PrevName}}</span> </li> {{end}} {{range $k,$v:= .p.PageList}} {{if $v.IsEllipsis}} <li class="page-item" aria-current="page"> <span class="page-link">...</span> </li> {{else}} {{if eq $.p.Page $v.PageNum}} <li class="page-item active" aria-current="page"><a class="page-link" href="{{$.p.GetLink $v.PageNum}}">{{$v.PageNum}}</a></li> {{else}} <li class="page-item"><a class="page-link" href="{{$.p.GetLink $v.PageNum}}">{{$v.PageNum}}</a></li> {{end}} {{end}} {{end}} {{if .p.HasNextPage }} <li class="page-item"> <a href="{{ .p.NextLink }}" class="page-link">{{.p.NextName}}</a> </li> {{else}} <li class="page-item disabled"> <span class="page-link">{{.p.NextName}}</span> </li> {{end}} </ul> </nav> {{end}}`
 	case 4:
-		tmpl = p.CustomTmpl
+		tmpl = `{{ if .p.HasBar}} <nav aria-label="pagination"> <ul class="pagination {{.p.BarSize}}"> {{if .p.HasPrevPage }} <li class="page-item"> <a href="{{ .p.PrevLink }}" class="page-link">{{.p.PrevName}}</a> </li> {{else}} <li class="page-item mx-1 disabled"> <span class="page-link">{{.p.PrevName}}</span> </li> {{end}} {{range $k,$v:= .p.PageList}} {{if $v.IsEllipsis}} <li class="page-item mx-1" aria-current="page"> <span class="page-link">...</span> </li> {{else}} {{if eq $.p.Page $v.PageNum}} <li class="page-item active" aria-current="page"><a class="page-link" href="{{$.p.GetLink $v.PageNum}}">{{$v.PageNum}}</a></li> {{else}} <li class="page-item"><a class="page-link" href="{{$.p.GetLink $v.PageNum}}">{{$v.PageNum}}</a></li> {{end}} {{end}} {{end}} {{if .p.HasNextPage }} <li class="page-item"> <a href="{{ .p.NextLink }}" class="page-link">{{.p.NextName}}</a> </li> {{else}} <li class="page-item disabled"> <span class="page-link">{{.p.NextName}}</span> </li> {{end}} </ul> </nav> {{end}}`
 	}
 	return template.HTML(p.ParseString(tmpl))
 

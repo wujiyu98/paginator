@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/wujiyu98/paginator/v2"
+	"github.com/wujiyu98/paginator"
 )
 
 // PageItem 结构体表示一个页码项，可以是数字页码，也可以是省略号
@@ -70,11 +70,8 @@ func paginate(totalPages, currentPage, slot int) []PageItem {
 func testPaginate() {
 	p := paginator.Default(100, 5)
 	p.SetSize(20)
-
 	p.Path = "/product/phone"
 	p.AddQuery("keyword", "hello")
-
-	// fmt.Println(p.Parse("bs5.tmpl"))
 	fmt.Println(p.GetContent(3))
 
 }
