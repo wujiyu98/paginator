@@ -6,7 +6,7 @@
       <a href="{{ .p.PrevLink }}" class="page-link">{{.p.PrevName}}</a>
     </li>
     {{else}}
-    <li class="page-item mx-1 disabled">
+    <li class="page-item disabled">
       <span class="page-link">{{.p.PrevName}}</span>
     </li>
     {{end}}
@@ -17,10 +17,10 @@
     </li>
     {{else}}
     {{if eq $.p.Page $v.PageNum}}
-    <li class="page-item active" aria-current="page"><a class="page-link"
+    <li class="page-item mx-1 active" aria-current="page"><a class="page-link"
         href="{{$.p.GetLink $v.PageNum}}">{{$v.PageNum}}</a></li>
     {{else}}
-    <li class="page-item"><a class="page-link" href="{{$.p.GetLink $v.PageNum}}">{{$v.PageNum}}</a></li>
+    <li class="page-item mx-1"><a class="page-link" href="{{$.p.GetLink $v.PageNum}}">{{$v.PageNum}}</a></li>
     {{end}}
     {{end}}
     {{end}}
