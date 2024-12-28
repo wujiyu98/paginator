@@ -2,17 +2,17 @@
 <nav aria-label="pagination">
   <ul class="pagination {{.p.BarSize}}">
     {{if .p.HasPrevPage }}
-    <li class="page-item">
+    <li class="page-item me-1">
       <a href="{{ .p.PrevLink }}" class="page-link">{{.p.PrevName}}</a>
     </li>
     {{else}}
-    <li class="page-item disabled">
+    <li class="page-item me-1 disabled">
       <span class="page-link">{{.p.PrevName}}</span>
     </li>
     {{end}}
     {{range $k,$v:= .p.PageList}}
     {{if $v.IsEllipsis}}
-    <li class="page-item mx-1" aria-current="page">
+    <li class="page-item mx-1 disabled" aria-current="page">
       <span class="page-link">...</span>
     </li>
     {{else}}
@@ -25,11 +25,11 @@
     {{end}}
     {{end}}
     {{if .p.HasNextPage }}
-    <li class="page-item">
+    <li class="page-item ms-1">
       <a href="{{ .p.NextLink }}" class="page-link">{{.p.NextName}}</a>
     </li>
     {{else}}
-    <li class="page-item disabled">
+    <li class="page-item ms-1 disabled">
       <span class="page-link">{{.p.NextName}}</span>
     </li>
     {{end}}
