@@ -12,8 +12,8 @@
     {{end}}
     {{range $k,$v:= .p.PageList}}
       {{if $v.IsEllipsis}}
-      <li class="page-item disabled">
-        <span class="page-link">...</span>
+      <li class="page-item">
+        <span class="page-link text-muted">...</span>
       </li>
       {{else}}
         {{if eq $.p.Page $v.PageNum}}
